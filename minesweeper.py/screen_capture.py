@@ -54,7 +54,7 @@ class screen_capture_agent:
             cv2.destroyAllWindows()
 
     def extract_image(self):
-        """Extract the captured image"""
+        """returns image in BGR"""
         return self.img[..., :3]  # Remove alpha channel
     
     DISPLAY_MAP = {
@@ -72,7 +72,7 @@ class screen_capture_agent:
 }
 
     
-    # Color map: mapping colors to cell types, in BGR format
+    # Color map: maps colors in BGR
     color_map = {
         'unrevealed': [(81, 215, 170), (73, 209, 162)],
         'empty': [(153, 184, 215), (159, 194, 229)],
@@ -87,7 +87,7 @@ class screen_capture_agent:
     }
 
     def color_distance_sq(self, color1, color2):
-        """Calculate squared Euclidean distance between two colors"""
+        """equation for finding distance between colors (Euclidean distance)"""
         return int(sum((int(c1) - int(c2)) ** 2 for c1, c2 in zip(color1, color2)))
     
     def match_color(self, pixel, threshold=4000):
@@ -125,10 +125,10 @@ class screen_capture_agent:
         cell_width = w / cols
         cell_height = h / rows
         
-        # Initialize board
+        
         board = []
         
-        # Iterate through rows and columns
+        # pixel detection for minesweeper cells
         for r in range(rows):
             row = []
             for c in range(cols):
@@ -137,7 +137,7 @@ class screen_capture_agent:
                 py = int(r * cell_height + cell_height / 2 - settings.height / 192) - 1 
                 py = max(0, min(py, self.img.shape[0] - 1))
                 px = max(0, min(px, self.img.shape[1] - 1))
-                # Sample multiple pixels around the center and vote on tile type
+                # look at center 9 pixels of each cell for accuracy
                 pixels = []
                 for dy in [-1, 0, 1]:
                     for dx in [-1, 0, 1]:
@@ -145,7 +145,7 @@ class screen_capture_agent:
                         x = max(0, min(px + dx, self.img.shape[1] - 1))
                         pixels.append(self.img[y, x])
                 
-                # Vote on the tile type based on individual pixel matches
+                # Tile type voting for more accuracy when detecting the '1' cell
                 tile_votes = [self.match_color(pixel, threshold) for pixel in pixels]
                 if '1' in tile_votes:
                     tile_type = '1'
@@ -162,7 +162,7 @@ class screen_capture_agent:
         rows = len(board)
         cols = len(board[0])
 
-        # Column indices
+        # print/ formatting gives vision on the board from programs side
         print("    " + " ".join(f"{c:2}" for c in range(cols)))
         print("    " + "--" * cols)
 
@@ -174,8 +174,7 @@ class screen_capture_agent:
 
     def get_frontier_cells(self, numeric_board):
         """
-        Returns a list of coordinates (r, c) of revealed number cells
-        that have at least one unrevealed neighbor.
+        gives a list of number cells with unrevealed cells beside it
         """
         rows, cols = len(numeric_board), len(numeric_board[0])
         frontier = []
@@ -203,7 +202,7 @@ class screen_capture_agent:
         for r in range(rows):
             for c in range(cols):
                 val = numeric_board[r][c]
-                if val > 0:  # number tile
+                if val > 0:  
                   
                     neighbors = [
                         (r+dr, c+dc)
@@ -237,4 +236,5 @@ class screen_capture_agent:
 if __name__ == '__main__':
     agent = screen_capture_agent()
     agent.capture_screen()
+
   
